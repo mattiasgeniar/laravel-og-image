@@ -1,7 +1,10 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Spatie\OgImage\Facades\OgImage as OgImageFacade;
 use Spatie\OgImage\OgImage;
+use Spatie\OgImage\OgImageGenerator;
 
 beforeEach(function () {
     $this->ogImage = app(OgImage::class);
@@ -70,4 +73,37 @@ it('uses the configured path', function () {
     $path = $this->ogImage->imagePath('abc123', 'png');
 
     expect($path)->toBe('custom-og-images/abc123.png');
+});
+
+it('uses Request::url() by default for resolveScreenshotUrl', function () {
+    $url = app(OgImageGenerator::class)->resolveScreenshotUrl();
+
+    expect($url)->toBe('http://localhost');
+});
+
+it('can customize url resolution with resolveScreenshotUrlUsing', function () {
+    OgImageFacade::resolveScreenshotUrlUsing(function (Request $request) {
+        return $request->fullUrl();
+    });
+
+    // Simulate a request with query params
+    $this->get('/some-page?category=php');
+
+    $url = app(OgImageGenerator::class)->resolveScreenshotUrl();
+
+    expect($url)->toBe('http://localhost/some-page?category=php');
+});
+
+it('stores the resolved url in cache when using custom resolver', function () {
+    OgImageFacade::resolveScreenshotUrlUsing(function (Request $request) {
+        return $request->fullUrl();
+    });
+
+    $this->get('/some-page?category=php');
+
+    $this->ogImage->html('<div>Hello</div>');
+
+    $hash = md5('<div>Hello</div>');
+
+    expect(Cache::get("og-image:{$hash}"))->toBe('http://localhost/some-page?category=php');
 });

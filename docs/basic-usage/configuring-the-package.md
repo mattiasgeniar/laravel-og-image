@@ -1,6 +1,6 @@
 ---
-title: Configuration
-weight: 2
+title: Configuring the package
+weight: 3
 ---
 
 You can configure the package using the `OgImage` facade in your `AppServiceProvider`. All methods are chainable:

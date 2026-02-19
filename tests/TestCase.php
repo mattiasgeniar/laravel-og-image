@@ -24,5 +24,6 @@ class TestCase extends Orchestra
             'url' => '/storage',
             'visibility' => 'public',
         ]);
+        $app['config']->set('view.paths', [__DIR__.'/views']);
     }
 }

@@ -1,6 +1,9 @@
 <?php
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
+use Spatie\OgImage\Facades\OgImage;
 use Spatie\OgImage\Http\Middleware\RenderOgImageMiddleware;
 
 beforeEach(function () {
@@ -88,4 +91,100 @@ it('returns the original response when no template tag is found', function () {
     $response = $this->get('/no-template?ogimage');
 
     expect($response->getContent())->toContain('<h1>No OG image here</h1>');
+});
+
+it('injects fallback template and meta tags when no template exists', function () {
+    OgImage::fallbackUsing(function (Request $request) {
+        return view('test-fallback', ['title' => 'Fallback Title']);
+    });
+
+    Route::middleware(['web', RenderOgImageMiddleware::class])->get('/no-template', function () {
+        return response('<html><head><meta charset="utf-8"></head><body><h1>Page</h1></body></html>');
+    });
+
+    $response = $this->get('/no-template');
+
+    $content = $response->getContent();
+
+    expect($content)
+        ->toContain('<template data-og-image>')
+        ->toContain('Fallback Title')
+        ->toContain('<meta property="og:image"')
+        ->toContain('<meta name="twitter:image"')
+        ->toContain('<meta name="twitter:card" content="summary_large_image">');
+});
+
+it('renders the fallback template with ogimage parameter', function () {
+    OgImage::fallbackUsing(function (Request $request) {
+        return view('test-fallback', ['title' => 'Fallback Title']);
+    });
+
+    Route::middleware(['web', RenderOgImageMiddleware::class])->get('/no-template', function () {
+        return response('<html><head><meta charset="utf-8"></head><body><h1>Page</h1></body></html>');
+    });
+
+    $response = $this->get('/no-template?ogimage');
+
+    $content = $response->getContent();
+
+    expect($content)
+        ->toContain('Fallback Title')
+        ->toContain('width: 1200px')
+        ->toContain('height: 630px')
+        ->not->toContain('<h1>Page</h1>');
+});
+
+it('caches the fallback url', function () {
+    OgImage::fallbackUsing(function (Request $request) {
+        return view('test-fallback', ['title' => 'Fallback Title']);
+    });
+
+    Route::middleware(['web', RenderOgImageMiddleware::class])->get('/no-template', function () {
+        return response('<html><head></head><body><h1>Page</h1></body></html>');
+    });
+
+    $this->get('/no-template');
+
+    $html = view('test-fallback', ['title' => 'Fallback Title'])->render();
+    $hash = md5($html);
+
+    expect(Cache::get("og-image:{$hash}"))->toBe('http://localhost/no-template');
+});
+
+it('does not inject fallback when page has a template', function () {
+    OgImage::fallbackUsing(function (Request $request) {
+        return view('test-fallback', ['title' => 'Should Not Appear']);
+    });
+
+    $response = $this->get('/test-page');
+
+    expect($response->getContent())->not->toContain('Should Not Appear');
+});
+
+it('skips fallback when closure returns null', function () {
+    OgImage::fallbackUsing(function (Request $request) {
+        return null;
+    });
+
+    Route::middleware(['web', RenderOgImageMiddleware::class])->get('/no-template', function () {
+        return response('<html><head></head><body><h1>Page</h1></body></html>');
+    });
+
+    $response = $this->get('/no-template');
+
+    expect($response->getContent())
+        ->not->toContain('<template data-og-image>')
+        ->not->toContain('og:image');
+});
+
+it('does not inject fallback when no fallback is registered', function () {
+    Route::middleware(['web', RenderOgImageMiddleware::class])->get('/no-template', function () {
+        return response('<html><head></head><body><h1>Page</h1></body></html>');
+    });
+
+    $response = $this->get('/no-template');
+
+    expect($response->getContent())
+        ->not->toContain('<template data-og-image>')
+        ->not->toContain('og:image');
 });

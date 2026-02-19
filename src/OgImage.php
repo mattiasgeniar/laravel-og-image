@@ -3,7 +3,6 @@
 namespace Spatie\OgImage;
 
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Request;
 use Illuminate\Support\HtmlString;
 
 class OgImage
@@ -13,7 +12,8 @@ class OgImage
         $format ??= config('og-image.format', 'jpeg');
         $hash = $this->hash($html);
 
-        $this->storeUrlInCache($hash, Request::url());
+        $screenshotUrl = app(OgImageGenerator::class)->resolveScreenshotUrl();
+        $this->storeUrlInCache($hash, $screenshotUrl);
 
         $template = '<template data-og-image>'.$html.'</template>';
 
@@ -59,7 +59,7 @@ class OgImage
         return $path.'/'.$hash.'.'.$format;
     }
 
-    protected function metaTags(string $hash, string $format): HtmlString
+    public function metaTags(string $hash, string $format): HtmlString
     {
         $url = $this->url($hash, $format);
 
@@ -71,5 +71,4 @@ class OgImage
 
         return new HtmlString($tags);
     }
-
 }
