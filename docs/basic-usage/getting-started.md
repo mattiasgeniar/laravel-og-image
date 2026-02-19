@@ -43,6 +43,28 @@ This outputs a hidden `<template>` tag (natively invisible in browsers) and the 
 
 The image URL contains a hash of your HTML content. When the content changes, the hash changes, so crawlers pick up the new image automatically.
 
+## Using a Blade view
+
+Instead of writing your OG image HTML inline, you can reference a Blade view:
+
+```blade
+<x-og-image view="og-image.post" :data="['title' => $post->title, 'author' => $post->author->name]" />
+```
+
+The view receives the `data` array as its variables:
+
+```blade
+{{-- resources/views/og-image/post.blade.php --}}
+<div class="w-full h-full bg-blue-900 text-white flex items-center justify-center p-16">
+    <div>
+        <h1 class="text-6xl font-bold">{{ $title }}</h1>
+        <p class="text-2xl mt-4">by {{ $author }}</p>
+    </div>
+</div>
+```
+
+This is useful when you reuse the same OG image layout across multiple pages or when the template is complex enough that you want it in its own file.
+
 ## Specifying the image format
 
 By default, images are generated as JPEG. You can specify a different format:

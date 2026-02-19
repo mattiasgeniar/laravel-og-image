@@ -26,7 +26,7 @@ Because image URLs are based on the md5 hash of the HTML content, changing the t
 
 ## Configuring the disk
 
-By default, images are stored on the `public` disk at `og-images`. You can change this via the [configuration](/docs/laravel-og-image/v1/basic-usage/configuring-the-package):
+By default, images are stored on the `public` disk at `og-images`. You can change this via the [customizing screenshots](/docs/laravel-og-image/v1/basic-usage/customizing-screenshots) page:
 
 ```php
 OgImage::disk('s3', 'og-images');
