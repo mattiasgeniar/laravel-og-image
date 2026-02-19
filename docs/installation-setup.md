@@ -9,7 +9,42 @@ You can install the package via composer:
 composer require spatie/laravel-og-image
 ```
 
-Make sure you also have the requirements for [spatie/laravel-screenshot](https://github.com/spatie/laravel-screenshot) installed (Node.js and Chrome/Chromium by default).
+## Configuring the screenshot driver
+
+This package uses [spatie/laravel-screenshot](https://github.com/spatie/laravel-screenshot) to take screenshots of your OG image HTML. You can use either Browsershot or Cloudflare to take these screenshots.
+
+### Browsershot (default)
+
+Browsershot is the default driver and requires Node.js and Chrome/Chromium on your server. No extra configuration is needed if these are already installed.
+
+See the [Browsershot requirements](https://spatie.be/docs/browsershot/v4/requirements) and [installation instructions](https://spatie.be/docs/browsershot/v4/installation-setup) for how to set these up, including instructions for [Forge](https://spatie.be/docs/browsershot/v4/installation-setup#content-forge).
+
+### Cloudflare
+
+If you don't want to install Node.js and Chrome on your server, you can use [Cloudflare's Browser Rendering API](https://developers.cloudflare.com/browser-rendering/) instead.
+
+Add this to your `AppServiceProvider`:
+
+```php
+use Spatie\OgImage\Facades\OgImage;
+
+public function boot(): void
+{
+    OgImage::useCloudflare(
+        apiToken: env('CLOUDFLARE_API_TOKEN'),
+        accountId: env('CLOUDFLARE_ACCOUNT_ID'),
+    );
+}
+```
+
+Then add your credentials to `.env`:
+
+```
+CLOUDFLARE_API_TOKEN=your-api-token
+CLOUDFLARE_ACCOUNT_ID=your-account-id
+```
+
+You can find your account ID in the Cloudflare dashboard URL (`https://dash.cloudflare.com/<account-id>`). To create an API token, go to [API Tokens](https://dash.cloudflare.com/profile/api-tokens) and create a token with the `Workers Scripts: Edit` permission.
 
 ## Publishing the config file
 
@@ -40,55 +75,9 @@ return [
     'height' => 630,
 
     /*
-     * The default image format. Supported: "png", "jpeg", "webp".
+     * The default image format. Supported: "jpeg", "png", "webp".
      */
-    'format' => 'png',
+    'format' => 'jpeg',
 
-    /*
-     * HTML tags injected into the <head> of the screenshot document.
-     */
-    'head' => [
-        '<script src="https://cdn.tailwindcss.com"></script>',
-    ],
-
-    /*
-     * The cache store used to temporarily store OG image HTML.
-     */
-    'cache_store' => null,
-
-    /*
-     * How long to keep the HTML in cache.
-     */
-    'cache_ttl' => null,
-
-    /*
-     * The base URL used to generate OG image URLs.
-     */
-    'base_url' => null,
-
-    /*
-     * The route prefix for the OG image serving endpoint.
-     */
-    'route_prefix' => 'og-image',
-
-    /*
-     * Middleware applied to the OG image serving route.
-     */
-    'route_middleware' => ['web'],
-
-    /*
-     * Extra configuration passed to spatie/laravel-screenshot.
-     */
-    'screenshot' => [],
 ];
 ```
-
-## Publishing the view
-
-You can publish the document template used to wrap your OG image HTML:
-
-```bash
-php artisan vendor:publish --tag=og-image-views
-```
-
-This lets you customize the HTML document that wraps your OG image content before it's screenshotted.

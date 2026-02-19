@@ -2,32 +2,23 @@
 
 namespace Spatie\OgImage\Facades;
 
+use Closure;
 use Illuminate\Support\Facades\Facade;
-use Illuminate\Support\HtmlString;
-use Spatie\OgImage\FakeOgImage;
+use Spatie\OgImage\OgImageGenerator;
 
 /**
- * @method static HtmlString view(string $view, array $data = [], ?string $format = null)
- * @method static HtmlString html(string $html, ?string $format = null)
- * @method static string url(string $hash, ?string $format = null)
- * @method static bool exists(string $hash, ?string $format = null)
- * @method static string hash(string $html)
+ * @method static OgImageGenerator useCloudflare(string $apiToken, string $accountId)
+ * @method static OgImageGenerator configureScreenshot(Closure $callback)
+ * @method static OgImageGenerator size(int $width, int $height)
+ * @method static OgImageGenerator format(string $format)
+ * @method static OgImageGenerator disk(string $disk, string $path = 'og-images')
  *
- * @see \Spatie\OgImage\OgImage
+ * @see \Spatie\OgImage\OgImageGenerator
  */
 class OgImage extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Spatie\OgImage\OgImage::class;
-    }
-
-    public static function fake(): FakeOgImage
-    {
-        $fake = new FakeOgImage;
-
-        static::swap($fake);
-
-        return $fake;
+        return OgImageGenerator::class;
     }
 }

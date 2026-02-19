@@ -5,9 +5,11 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/spatie/laravel-og-image/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/spatie/laravel-og-image/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/spatie/laravel-og-image.svg?style=flat-square)](https://packagist.org/packages/spatie/laravel-og-image)
 
-This package makes it easy to generate Open Graph images for your Laravel application. Define your OG image HTML inline in your Blade views or via separate view files, and the package automatically generates screenshot images using [spatie/laravel-screenshot](https://github.com/spatie/laravel-screenshot), serves them via a dedicated route, and caches them on disk.
+This package makes it easy to generate Open Graph images for your Laravel application. Define your OG image HTML inline in your Blade views, and the package automatically generates screenshot images using [spatie/laravel-screenshot](https://github.com/spatie/laravel-screenshot), serves them via a dedicated route, and caches them on disk.
 
-No external API needed — everything runs on your own server.
+Your OG image templates inherit your page's existing CSS, fonts, and Vite assets. No separate CSS configuration needed.
+
+No external API needed. Everything runs on your own server.
 
 ## Support us
 
@@ -33,23 +35,18 @@ Use the Blade component to define your OG image inline:
 </x-og-image>
 ```
 
-Or use the facade with a dedicated view file:
-
-```blade
-{{ OgImage::view('og.blog-post', ['title' => $post->title]) }}
-```
-
-Both output the appropriate `<meta>` tags pointing to a generated screenshot of your HTML at 1200x630 pixels.
+This outputs a hidden `<template>` tag and `<meta>` tags pointing to a generated screenshot of your HTML at 1200×630 pixels.
 
 ## How it works
 
-1. Your HTML is hashed (md5) and stored in Laravel's cache
-2. Meta tags point to `/og-image/{hash}.png`
-3. When that URL is first requested, the HTML is screenshotted at 1200x630
-4. The generated image is saved to your public disk
-5. Subsequent requests serve the image directly from disk
+1. Your HTML is rendered inside a `<template data-og-image>` tag on the page
+2. The page URL is cached, keyed by the md5 hash of the HTML content
+3. Meta tags point to `/og-image/{hash}.jpeg`
+4. When that URL is first requested, the page is visited with `?ogimage` appended, rendering just the template content with the page's full CSS at 1200×630
+5. The generated image is saved to your public disk
+6. Subsequent requests serve the image directly from disk
 
-Tailwind CSS is included by default, so you can use utility classes out of the box.
+Preview any OG image by appending `?ogimage` to the page URL.
 
 ## Installation
 
@@ -68,18 +65,6 @@ php artisan vendor:publish --tag="og-image-config"
 ```
 
 ## Testing
-
-The package provides a fake for testing:
-
-```php
-use Spatie\OgImage\Facades\OgImage;
-
-OgImage::fake();
-
-// ... your code ...
-
-OgImage::assertViewRendered('og.blog-post');
-```
 
 ```bash
 composer test

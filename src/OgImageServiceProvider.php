@@ -9,6 +9,7 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\OgImage\Commands\ClearOgImagesCommand;
 use Spatie\OgImage\Components\OgImageComponent;
 use Spatie\OgImage\Http\Controllers\OgImageController;
+use Spatie\OgImage\Http\Middleware\RenderOgImageMiddleware;
 
 class OgImageServiceProvider extends PackageServiceProvider
 {
@@ -17,7 +18,6 @@ class OgImageServiceProvider extends PackageServiceProvider
         $package
             ->name('og-image')
             ->hasConfigFile()
-            ->hasViews()
             ->hasCommand(ClearOgImagesCommand::class);
     }
 
@@ -32,19 +32,23 @@ class OgImageServiceProvider extends PackageServiceProvider
         Blade::component('og-image', OgImageComponent::class);
 
         $this->registerRoutes();
+        $this->registerMiddleware();
     }
 
     protected function registerRoutes(): void
     {
-        $prefix = config('og-image.route_prefix', 'og-image');
-        $middleware = config('og-image.route_middleware', ['web']);
-
-        Route::middleware($middleware)
-            ->prefix($prefix)
+        Route::prefix('og-image')
             ->group(function () {
                 Route::get('{filename}', OgImageController::class)
                     ->where('filename', '[a-f0-9]+\.(png|jpeg|jpg|webp)')
                     ->name('og-image.serve');
             });
+    }
+
+    protected function registerMiddleware(): void
+    {
+        $router = $this->app['router'];
+
+        $router->pushMiddlewareToGroup('web', RenderOgImageMiddleware::class);
     }
 }

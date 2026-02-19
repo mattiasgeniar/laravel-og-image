@@ -17,9 +17,7 @@ class OgImageComponent extends Component
         return function (array $data) {
             $html = trim($data['slot']->toHtml());
 
-            $metaTags = app(OgImage::class)->html($html, $this->format);
-
-            return $metaTags->toHtml();
+            return app(OgImage::class)->html($html, $this->format)->toHtml();
         };
     }
 }

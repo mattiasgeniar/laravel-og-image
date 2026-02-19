@@ -3,36 +3,52 @@ title: Customizing screenshots
 weight: 1
 ---
 
-Under the hood, this package uses [spatie/laravel-screenshot](https://github.com/spatie/laravel-screenshot) to generate images. You can pass extra options to the screenshot builder via the `screenshot` config key.
-
-## Available options
+You can customize the screenshot builder using `OgImage::configureScreenshot()` in your `AppServiceProvider`:
 
 ```php
-// config/og-image.php
-'screenshot' => [
-    'device_scale_factor' => 2, // retina-quality images
-    'wait_until' => 'networkidle0', // wait for network to be idle
-    'wait_for_timeout' => 1000, // wait 1 second before taking the screenshot
-],
+use Spatie\OgImage\Enums\WaitUntil;
+use Spatie\OgImage\Facades\OgImage;
+use Spatie\LaravelScreenshot\ScreenshotBuilder;
+
+public function boot(): void
+{
+    OgImage::configureScreenshot(function (ScreenshotBuilder $screenshot) {
+        $screenshot
+            ->deviceScaleFactor(2)
+            ->waitUntil(WaitUntil::NetworkIdle0);
+    });
+}
 ```
 
-### device_scale_factor
+The closure receives the `ScreenshotBuilder` instance after the URL, size, and disk have been set. You can call any method on the builder.
+
+This can be chained with other configuration methods:
+
+```php
+OgImage::format('webp')
+    ->size(1200, 630)
+    ->configureScreenshot(function (ScreenshotBuilder $screenshot) {
+        $screenshot->deviceScaleFactor(2);
+    });
+```
+
+For choosing between Browsershot and Cloudflare, see [screenshot driver](/docs/laravel-og-image/v1/basic-usage/screenshot-driver).
+
+## Common options
+
+### deviceScaleFactor
 
 Controls the device pixel ratio. Set to `2` for retina-quality images (resulting in 2400x1260 pixel images at the default 1200x630 viewport).
 
-### wait_until
+### waitUntil
 
-Determines when the page is considered loaded. Options:
+Determines when the page is considered loaded. Use the `WaitUntil` enum:
 
-- `load` — wait for the `load` event
-- `domcontentloaded` — wait for the `DOMContentLoaded` event
-- `networkidle0` — wait until there are no more than 0 network connections for at least 500ms
-- `networkidle2` — wait until there are no more than 2 network connections for at least 500ms
+- `WaitUntil::Load`: wait for the `load` event
+- `WaitUntil::DomContentLoaded`: wait for the `DOMContentLoaded` event
+- `WaitUntil::NetworkIdle0`: wait until there are no more than 0 network connections for at least 500ms
+- `WaitUntil::NetworkIdle2`: wait until there are no more than 2 network connections for at least 500ms
 
-### wait_for_timeout
+### waitForTimeout
 
 Additional time to wait (in milliseconds) after the page has loaded. Useful if you need to wait for fonts or animations to complete.
-
-## Browsershot configuration
-
-Since laravel-screenshot uses Browsershot by default, you can configure Browsershot's settings through its own config file. See the [laravel-screenshot documentation](https://github.com/spatie/laravel-screenshot) for details.

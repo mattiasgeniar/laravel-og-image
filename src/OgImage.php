@@ -2,45 +2,29 @@
 
 namespace Spatie\OgImage;
 
-use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\HtmlString;
 
 class OgImage
 {
-    public function view(string $view, array $data = [], ?string $format = null): HtmlString
-    {
-        $html = view($view, $data)->render();
-
-        return $this->html($html, $format);
-    }
-
     public function html(string $html, ?string $format = null): HtmlString
     {
-        $format ??= config('og-image.format', 'png');
+        $format ??= config('og-image.format', 'jpeg');
         $hash = $this->hash($html);
 
-        $this->storeHtmlInCache($hash, $html);
+        $this->storeUrlInCache($hash, Request::url());
 
-        return $this->metaTags($hash, $format);
+        $template = '<template data-og-image>'.$html.'</template>';
+
+        return new HtmlString($template.PHP_EOL.$this->metaTags($hash, $format));
     }
 
     public function url(string $hash, ?string $format = null): string
     {
-        $format ??= config('og-image.format', 'png');
-        $baseUrl = config('og-image.base_url') ?? config('app.url');
-        $prefix = config('og-image.route_prefix', 'og-image');
+        $format ??= config('og-image.format', 'jpeg');
 
-        return rtrim($baseUrl, '/').'/'.$prefix.'/'.$hash.'.'.$format;
-    }
-
-    public function exists(string $hash, ?string $format = null): bool
-    {
-        $format ??= config('og-image.format', 'png');
-
-        return Storage::disk(config('og-image.disk', 'public'))
-            ->exists($this->imagePath($hash, $format));
+        return rtrim(config('app.url'), '/').'/og-image/'.$hash.'.'.$format;
     }
 
     public function hash(string $html): string
@@ -48,22 +32,24 @@ class OgImage
         return md5($html);
     }
 
-    public function storeHtmlInCache(string $hash, string $html): void
+    public function storeUrlInCache(string $hash, string $url): void
     {
-        $ttl = config('og-image.cache_ttl');
-
-        if ($ttl === null) {
-            $this->cacheStore()->forever("og-image:{$hash}", $html);
-
-            return;
-        }
-
-        $this->cacheStore()->put("og-image:{$hash}", $html, $ttl);
+        Cache::forever("og-image:{$hash}", $url);
     }
 
-    public function getHtmlFromCache(string $hash): ?string
+    public function getUrlFromCache(string $hash): ?string
     {
-        return $this->cacheStore()->get("og-image:{$hash}");
+        return Cache::get("og-image:{$hash}");
+    }
+
+    public function storeImageUrlInCache(string $hash, string $format, string $url): void
+    {
+        Cache::forever("og-image-url:{$hash}.{$format}", $url);
+    }
+
+    public function getImageUrlFromCache(string $hash, string $format): ?string
+    {
+        return Cache::get("og-image-url:{$hash}.{$format}");
     }
 
     public function imagePath(string $hash, string $format): string
@@ -86,10 +72,4 @@ class OgImage
         return new HtmlString($tags);
     }
 
-    protected function cacheStore(): Repository
-    {
-        $store = config('og-image.cache_store');
-
-        return Cache::store($store);
-    }
 }

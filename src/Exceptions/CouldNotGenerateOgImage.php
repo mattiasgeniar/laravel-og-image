@@ -6,8 +6,8 @@ use Exception;
 
 class CouldNotGenerateOgImage extends Exception
 {
-    public static function htmlNotFound(string $hash): self
+    public static function urlNotFound(string $hash): self
     {
-        return new self("Could not find the HTML for OG image with hash [{$hash}]. The cache entry may have expired.");
+        return new self("Could not find the URL for OG image with hash [{$hash}]. The cache entry may have expired.");
     }
 }

@@ -3,6 +3,7 @@
 namespace Spatie\OgImage\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Spatie\OgImage\OgImage;
 use Spatie\OgImage\OgImageGenerator;
@@ -20,38 +21,32 @@ class OgImageController
         [$hash, $format] = $parts;
 
         $ogImage = app(OgImage::class);
-        $disk = Storage::disk(config('og-image.disk', 'public'));
-        $path = $ogImage->imagePath($hash, $format);
 
-        if ($disk->exists($path)) {
-            return $this->serveImage($disk, $path, $format);
+        $imageUrl = $ogImage->getImageUrlFromCache($hash, $format);
+
+        if ($imageUrl) {
+            return redirect($imageUrl);
         }
 
-        $html = $ogImage->getHtmlFromCache($hash);
+        $pageUrl = $ogImage->getUrlFromCache($hash);
 
-        if ($html === null) {
+        if ($pageUrl === null) {
             abort(404);
         }
 
-        app(OgImageGenerator::class)->generate($html, $path, $format);
+        $path = $ogImage->imagePath($hash, $format);
 
-        return $this->serveImage($disk, $path, $format);
-    }
+        Cache::lock("og-image-generate:{$hash}", 60)->block(60, function () use ($ogImage, $hash, $format, $pageUrl, $path) {
+            if ($ogImage->getImageUrlFromCache($hash, $format)) {
+                return;
+            }
 
-    protected function serveImage(mixed $disk, string $path, string $format): mixed
-    {
-        $mimeTypes = [
-            'png' => 'image/png',
-            'jpeg' => 'image/jpeg',
-            'jpg' => 'image/jpeg',
-            'webp' => 'image/webp',
-        ];
+            app(OgImageGenerator::class)->generate($pageUrl.'?ogimage', $path, $format);
 
-        $mimeType = $mimeTypes[$format] ?? 'image/png';
+            $disk = Storage::disk(config('og-image.disk', 'public'));
+            $ogImage->storeImageUrlInCache($hash, $format, $disk->url($path));
+        });
 
-        return response($disk->get($path), 200, [
-            'Content-Type' => $mimeType,
-            'Cache-Control' => 'public, max-age=31536000, immutable',
-        ]);
+        return redirect($ogImage->getImageUrlFromCache($hash, $format));
     }
 }

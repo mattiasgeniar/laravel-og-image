@@ -1,45 +1,41 @@
 <?php
 
 use Illuminate\Support\Facades\Storage;
+use Spatie\OgImage\OgImage;
 
 beforeEach(function () {
     Storage::fake('public');
 });
 
-it('returns 404 when image does not exist and html is not in cache', function () {
+it('returns 404 when image does not exist and url is not in cache', function () {
     $this->get('/og-image/nonexistent.png')->assertNotFound();
 });
 
-it('serves an existing image from disk', function () {
-    Storage::disk('public')->put('og-images/abc123.png', 'fake-image-content');
+it('redirects to the cached image url', function () {
+    $ogImage = app(OgImage::class);
+    $ogImage->storeImageUrlInCache('abc123', 'png', 'https://example.com/og-images/abc123.png');
 
     $response = $this->get('/og-image/abc123.png');
 
-    $response->assertOk();
-    $response->assertHeader('Content-Type', 'image/png');
-    expect($response->headers->get('Cache-Control'))
-        ->toContain('public')
-        ->toContain('max-age=31536000')
-        ->toContain('immutable');
-    expect($response->getContent())->toBe('fake-image-content');
+    $response->assertRedirect('https://example.com/og-images/abc123.png');
 });
 
-it('serves jpeg images with correct content type', function () {
-    Storage::disk('public')->put('og-images/abc123.jpeg', 'fake-jpeg-content');
+it('redirects to cached jpeg image url', function () {
+    $ogImage = app(OgImage::class);
+    $ogImage->storeImageUrlInCache('abc123', 'jpeg', 'https://example.com/og-images/abc123.jpeg');
 
     $response = $this->get('/og-image/abc123.jpeg');
 
-    $response->assertOk();
-    $response->assertHeader('Content-Type', 'image/jpeg');
+    $response->assertRedirect('https://example.com/og-images/abc123.jpeg');
 });
 
-it('serves webp images with correct content type', function () {
-    Storage::disk('public')->put('og-images/abc123.webp', 'fake-webp-content');
+it('redirects to cached webp image url', function () {
+    $ogImage = app(OgImage::class);
+    $ogImage->storeImageUrlInCache('abc123', 'webp', 'https://example.com/og-images/abc123.webp');
 
     $response = $this->get('/og-image/abc123.webp');
 
-    $response->assertOk();
-    $response->assertHeader('Content-Type', 'image/webp');
+    $response->assertRedirect('https://example.com/og-images/abc123.webp');
 });
 
 it('rejects invalid filenames', function () {
