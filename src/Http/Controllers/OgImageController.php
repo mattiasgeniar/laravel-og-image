@@ -3,50 +3,16 @@
 namespace Spatie\OgImage\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
-use Spatie\OgImage\OgImage;
+use Spatie\OgImage\Actions\GenerateOgImageAction;
 use Spatie\OgImage\OgImageGenerator;
+use Symfony\Component\HttpFoundation\Response;
 
 class OgImageController
 {
-    public function __invoke(Request $request, string $filename): mixed
+    public function __invoke(Request $request, string $filename): Response
     {
-        $parts = explode('.', $filename, 2);
+        $action = OgImageGenerator::getActionClass('generate_og_image', GenerateOgImageAction::class);
 
-        if (count($parts) !== 2) {
-            abort(404);
-        }
-
-        [$hash, $format] = $parts;
-
-        $ogImage = app(OgImage::class);
-
-        $imageUrl = $ogImage->getImageUrlFromCache($hash, $format);
-
-        if ($imageUrl) {
-            return redirect($imageUrl);
-        }
-
-        $pageUrl = $ogImage->getUrlFromCache($hash);
-
-        if ($pageUrl === null) {
-            abort(404);
-        }
-
-        $path = $ogImage->imagePath($hash, $format);
-
-        Cache::lock("og-image-generate:{$hash}", 60)->block(60, function () use ($ogImage, $hash, $format, $pageUrl, $path) {
-            if ($ogImage->getImageUrlFromCache($hash, $format)) {
-                return;
-            }
-
-            app(OgImageGenerator::class)->generate($pageUrl.'?ogimage', $path, $format);
-
-            $disk = Storage::disk(config('og-image.disk', 'public'));
-            $ogImage->storeImageUrlInCache($hash, $format, $disk->url($path));
-        });
-
-        return redirect($ogImage->getImageUrlFromCache($hash, $format));
+        return $action->execute($filename);
     }
 }

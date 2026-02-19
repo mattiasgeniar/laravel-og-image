@@ -18,6 +18,7 @@ class OgImageServiceProvider extends PackageServiceProvider
         $package
             ->name('og-image')
             ->hasConfigFile()
+            ->hasViews()
             ->hasCommand(ClearOgImagesCommand::class);
     }
 

@@ -8,9 +8,31 @@ use Spatie\LaravelScreenshot\Drivers\CloudflareDriver;
 use Spatie\LaravelScreenshot\Drivers\ScreenshotDriver;
 use Spatie\LaravelScreenshot\Facades\Screenshot;
 use Spatie\LaravelScreenshot\ScreenshotBuilder;
+use Spatie\OgImage\Exceptions\InvalidConfig;
 
 class OgImageGenerator
 {
+    /**
+     * @template T of object
+     *
+     * @param  class-string<T>  $actionClass
+     * @return T
+     */
+    public static function getActionClass(string $actionName, string $actionClass): object
+    {
+        $configuredClass = config("og-image.actions.{$actionName}");
+
+        if (is_null($configuredClass)) {
+            $configuredClass = $actionClass;
+        }
+
+        if (! is_a($configuredClass, $actionClass, true)) {
+            throw InvalidConfig::invalidAction($actionName, $configuredClass, $actionClass);
+        }
+
+        return resolve($configuredClass);
+    }
+
     protected ?Closure $fallbackUsing = null;
 
     protected ?Closure $resolveScreenshotUrlUsing = null;
