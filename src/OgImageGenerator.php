@@ -113,7 +113,7 @@ class OgImageGenerator
         return $this;
     }
 
-    public function generate(string $url, string $path, string $format): void
+    public function generate(string $url, string $path): void
     {
         $width = config('og-image.width', 1200);
         $height = config('og-image.height', 630);

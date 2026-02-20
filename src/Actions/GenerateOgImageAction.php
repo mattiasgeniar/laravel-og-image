@@ -66,7 +66,7 @@ class GenerateOgImageAction
                 return;
             }
 
-            $this->takeScreenshot($pageUrl, $path, $format);
+            $this->takeScreenshot($pageUrl, $path);
 
             $this->cacheImageUrl($hash, $format, $path);
         });
@@ -77,9 +77,9 @@ class GenerateOgImageAction
         return app(OgImage::class)->imagePath($hash, $format);
     }
 
-    protected function takeScreenshot(string $pageUrl, string $path, string $format): void
+    protected function takeScreenshot(string $pageUrl, string $path): void
     {
-        app(OgImageGenerator::class)->generate("{$pageUrl}?ogimage", $path, $format);
+        app(OgImageGenerator::class)->generate("{$pageUrl}?ogimage", $path);
     }
 
     protected function cacheImageUrl(string $hash, string $format, string $path): void

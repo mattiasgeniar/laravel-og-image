@@ -63,12 +63,11 @@ For full control over the screenshot process, use `configureScreenshot()`. The c
 
 ```php
 use Spatie\LaravelScreenshot\ScreenshotBuilder;
-use Spatie\OgImage\Enums\WaitUntil;
 
 OgImage::configureScreenshot(function (ScreenshotBuilder $screenshot) {
     $screenshot
         ->deviceScaleFactor(2)
-        ->waitUntil(WaitUntil::NetworkIdle0);
+        ->waitUntil('networkidle0');
 });
 ```
 
@@ -92,12 +91,12 @@ Controls the device pixel ratio. Set to `2` for retina-quality images (resulting
 
 ### waitUntil
 
-Determines when the page is considered loaded. Use the `WaitUntil` enum:
+Determines when the page is considered loaded. Supported values:
 
-- `WaitUntil::Load`: wait for the `load` event
-- `WaitUntil::DomContentLoaded`: wait for the `DOMContentLoaded` event
-- `WaitUntil::NetworkIdle0`: wait until there are no more than 0 network connections for at least 500ms
-- `WaitUntil::NetworkIdle2`: wait until there are no more than 2 network connections for at least 500ms
+- `'load'`: wait for the `load` event
+- `'domcontentloaded'`: wait for the `DOMContentLoaded` event
+- `'networkidle0'`: wait until there are no more than 0 network connections for at least 500ms
+- `'networkidle2'`: wait until there are no more than 2 network connections for at least 500ms
 
 ### waitForTimeout
 
