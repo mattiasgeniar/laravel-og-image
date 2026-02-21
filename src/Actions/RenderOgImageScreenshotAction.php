@@ -2,46 +2,32 @@
 
 namespace Spatie\OgImage\Actions;
 
+use Spatie\OgImage\Support\TemplateExtractor;
+
 class RenderOgImageScreenshotAction
 {
     public function execute(string $content): ?string
     {
-        $templateContent = $this->extractTemplateContent($content);
+        $extracted = TemplateExtractor::extract($content);
 
-        if ($templateContent === null) {
+        if ($extracted === null) {
             return null;
         }
 
-        $head = $this->extractHead($content);
-
-        return $this->renderScreenshot($head, $templateContent);
-    }
-
-    protected function extractTemplateContent(string $html): ?string
-    {
-        if (preg_match('/<template\s+data-og-image>(.*?)<\/template>/s', $html, $matches)) {
-            return $matches[1];
-        }
-
-        return null;
+        return view('og-image::screenshot', [
+            'head' => $this->extractHead($content),
+            'templateContent' => $extracted['content'],
+            'width' => $extracted['width'] ?? config('og-image.width', 1200),
+            'height' => $extracted['height'] ?? config('og-image.height', 630),
+        ])->render();
     }
 
     protected function extractHead(string $html): string
     {
-        if (preg_match('/<head\b[^>]*>(.*?)<\/head>/si', $html, $matches)) {
-            return $matches[1];
+        if (! preg_match('/<head\b[^>]*>(.*?)<\/head>/si', $html, $matches)) {
+            return '';
         }
 
-        return '';
-    }
-
-    protected function renderScreenshot(string $head, string $templateContent): string
-    {
-        return view('og-image::screenshot', [
-            'head' => $head,
-            'templateContent' => $templateContent,
-            'width' => config('og-image.width', 1200),
-            'height' => config('og-image.height', 630),
-        ])->render();
+        return $matches[1];
     }
 }

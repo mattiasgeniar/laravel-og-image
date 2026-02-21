@@ -12,18 +12,18 @@ class OgImageComponent extends Component
         public ?string $view = null,
         public array $data = [],
         public ?string $format = null,
+        public ?int $width = null,
+        public ?int $height = null,
     ) {}
 
     public function render(): Closure
     {
         return function (array $data) {
-            if ($this->view) {
-                $html = view($this->view, $this->data)->render();
-            } else {
-                $html = trim($data['slot']->toHtml());
-            }
+            $html = $this->view
+                ? view($this->view, $this->data)->render()
+                : trim($data['slot']->toHtml());
 
-            return app(OgImage::class)->html($html, $this->format)->toHtml();
+            return app(OgImage::class)->html($html, $this->format, $this->width, $this->height)->toHtml();
         };
     }
 }

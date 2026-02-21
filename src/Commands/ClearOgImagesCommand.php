@@ -15,7 +15,6 @@ class ClearOgImagesCommand extends Command
     {
         $disk = Storage::disk(config('og-image.disk', 'public'));
         $path = config('og-image.path', 'og-images');
-
         $files = $disk->files($path);
 
         if (empty($files)) {
@@ -26,7 +25,8 @@ class ClearOgImagesCommand extends Command
 
         $disk->delete($files);
 
-        $this->components->info('Deleted '.count($files).' OG image(s).');
+        $count = count($files);
+        $this->components->info("Deleted {$count} OG image(s).");
 
         return self::SUCCESS;
     }

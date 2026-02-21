@@ -3,30 +3,30 @@
 namespace Spatie\OgImage\Actions;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Spatie\OgImage\Exceptions\CouldNotGenerateOgImage;
 use Spatie\OgImage\OgImage;
 use Spatie\OgImage\OgImageGenerator;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class GenerateOgImageAction
 {
     public function execute(string $filename): Response
     {
-        $hash = $this->parseHash($filename);
-
-        $format = $this->parseFormat($filename);
+        $hash = pathinfo($filename, PATHINFO_FILENAME);
+        $format = pathinfo($filename, PATHINFO_EXTENSION);
 
         if (! $hash || ! $format) {
             abort(404);
         }
 
-        $cachedImageUrl = $this->getCachedImageUrl($hash, $format);
-
-        if ($cachedImageUrl) {
+        if ($cachedImageUrl = $this->getCachedImageUrl($hash, $format)) {
             return redirect($cachedImageUrl);
         }
 
-        $pageUrl = $this->getPageUrl($hash);
+        $pageUrl = app(OgImage::class)->getUrlFromCache($hash);
 
         if (! $pageUrl) {
             abort(404);
@@ -37,55 +37,37 @@ class GenerateOgImageAction
         return redirect($this->getCachedImageUrl($hash, $format));
     }
 
-    protected function parseHash(string $filename): string
-    {
-        return pathinfo($filename, PATHINFO_FILENAME);
-    }
-
-    protected function parseFormat(string $filename): string
-    {
-        return pathinfo($filename, PATHINFO_EXTENSION);
-    }
-
     protected function getCachedImageUrl(string $hash, string $format): ?string
     {
         return app(OgImage::class)->getImageUrlFromCache($hash, $format);
     }
 
-    protected function getPageUrl(string $hash): ?string
-    {
-        return app(OgImage::class)->getUrlFromCache($hash);
-    }
-
     protected function generateImage(string $hash, string $format, string $pageUrl): void
     {
-        $path = $this->imagePath($hash, $format);
+        $path = app(OgImage::class)->imagePath($hash, $format);
+        $lockTimeout = config('og-image.lock_timeout', 60);
+        $dimensions = app(OgImage::class)->getDimensionsFromCache($hash);
 
-        Cache::lock("og-image-generate:{$hash}", 60)->block(60, function () use ($hash, $format, $pageUrl, $path) {
+        Cache::lock("og-image-generate:{$hash}", $lockTimeout)->block($lockTimeout, function () use ($hash, $format, $pageUrl, $path, $dimensions) {
             if ($this->getCachedImageUrl($hash, $format)) {
                 return;
             }
 
-            $this->takeScreenshot($pageUrl, $path);
+            try {
+                app(OgImageGenerator::class)->generate(
+                    $pageUrl . '?' . config('og-image.preview_parameter', 'ogimage'),
+                    $path,
+                    $dimensions['width'] ?? null,
+                    $dimensions['height'] ?? null,
+                );
+            } catch (Throwable $exception) {
+                Log::error("OG image generation failed for {$pageUrl}: {$exception->getMessage()}");
 
-            $this->cacheImageUrl($hash, $format, $path);
+                throw CouldNotGenerateOgImage::screenshotFailed($pageUrl, $exception);
+            }
+
+            $disk = Storage::disk(config('og-image.disk', 'public'));
+            app(OgImage::class)->storeImageUrlInCache($hash, $format, $disk->url($path));
         });
-    }
-
-    protected function imagePath(string $hash, string $format): string
-    {
-        return app(OgImage::class)->imagePath($hash, $format);
-    }
-
-    protected function takeScreenshot(string $pageUrl, string $path): void
-    {
-        app(OgImageGenerator::class)->generate("{$pageUrl}?ogimage", $path);
-    }
-
-    protected function cacheImageUrl(string $hash, string $format, string $path): void
-    {
-        $disk = Storage::disk(config('og-image.disk', 'public'));
-
-        app(OgImage::class)->storeImageUrlInCache($hash, $format, $disk->url($path));
     }
 }

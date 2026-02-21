@@ -3,11 +3,15 @@
 namespace Spatie\OgImage;
 
 use Closure;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Spatie\LaravelScreenshot\Drivers\CloudflareDriver;
 use Spatie\LaravelScreenshot\Drivers\ScreenshotDriver;
 use Spatie\LaravelScreenshot\Facades\Screenshot;
 use Spatie\OgImage\Exceptions\InvalidConfig;
+use Spatie\OgImage\Support\TemplateExtractor;
 
 class OgImageGenerator
 {
@@ -19,11 +23,7 @@ class OgImageGenerator
      */
     public static function getActionClass(string $actionName, string $actionClass): object
     {
-        $configuredClass = config("og-image.actions.{$actionName}");
-
-        if (is_null($configuredClass)) {
-            $configuredClass = $actionClass;
-        }
+        $configuredClass = config("og-image.actions.{$actionName}") ?? $actionClass;
 
         if (! is_a($configuredClass, $actionClass, true)) {
             throw InvalidConfig::invalidAction($actionName, $configuredClass, $actionClass);
@@ -113,15 +113,18 @@ class OgImageGenerator
         return $this;
     }
 
-    public function generate(string $url, string $path): void
+    public function generate(string $url, string $path, ?int $width = null, ?int $height = null): void
     {
-        $width = config('og-image.width', 1200);
-        $height = config('og-image.height', 630);
-        $diskName = config('og-image.disk', 'public');
-
         $builder = Screenshot::url($url)
-            ->size($width, $height)
-            ->disk($diskName, 'public');
+            ->size(
+                $width ?? config('og-image.width', 1200),
+                $height ?? config('og-image.height', 630),
+            )
+            ->disk(config('og-image.disk', 'public'), 'public');
+
+        if ($quality = config('og-image.quality')) {
+            $builder->quality($quality);
+        }
 
         if ($this->driver) {
             $builder->setDriver($this->driver);
@@ -132,5 +135,52 @@ class OgImageGenerator
         }
 
         $builder->save($path);
+    }
+
+    public function generateForUrl(string $pageUrl, ?string $format = null): string
+    {
+        $format ??= config('og-image.format', 'jpeg');
+        $ogImage = app(OgImage::class);
+
+        $html = Http::get($pageUrl)->body();
+        $extracted = TemplateExtractor::extract($html);
+
+        if ($extracted === null) {
+            throw new RuntimeException("No OG image template found at {$pageUrl}");
+        }
+
+        $width = $extracted['width'];
+        $height = $extracted['height'];
+        $hash = $ogImage->hash($extracted['content'], $width, $height);
+        $imagePath = $ogImage->imagePath($hash, $format);
+        $disk = Storage::disk(config('og-image.disk', 'public'));
+
+        if ($cachedUrl = $ogImage->getImageUrlFromCache($hash, $format)) {
+            return $cachedUrl;
+        }
+
+        if ($disk->exists($imagePath)) {
+            $imageUrl = $disk->url($imagePath);
+            $ogImage->storeImageUrlInCache($hash, $format, $imageUrl);
+
+            return $imageUrl;
+        }
+
+        $ogImage->storeUrlInCache($hash, $pageUrl);
+
+        if ($width !== null) {
+            if ($height !== null) {
+                $ogImage->storeDimensionsInCache($hash, $width, $height);
+            }
+        }
+
+        $previewParameter = config('og-image.preview_parameter', 'ogimage');
+
+        $this->generate("{$pageUrl}?{$previewParameter}", $imagePath, $width, $height);
+
+        $imageUrl = $disk->url($imagePath);
+        $ogImage->storeImageUrlInCache($hash, $format, $imageUrl);
+
+        return $imageUrl;
     }
 }

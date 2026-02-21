@@ -188,3 +188,45 @@ it('does not inject fallback when no fallback is registered', function () {
         ->not->toContain('<template data-og-image>')
         ->not->toContain('og:image');
 });
+
+it('detects template tags with custom dimension attributes', function () {
+    Route::middleware(['web', RenderOgImageMiddleware::class])->get('/custom-size', function () {
+        return response(<<<'HTML'
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body>
+            <template data-og-image data-og-width="800" data-og-height="400"><div>Custom</div></template>
+        </body>
+        </html>
+        HTML);
+    });
+
+    $response = $this->get('/custom-size');
+
+    $response->assertOk();
+    expect($response->getContent())->toContain('<template data-og-image');
+});
+
+it('renders custom dimensions in screenshot mode', function () {
+    Route::middleware(['web', RenderOgImageMiddleware::class])->get('/custom-size', function () {
+        return response(<<<'HTML'
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body>
+            <template data-og-image data-og-width="800" data-og-height="400"><div>Custom</div></template>
+        </body>
+        </html>
+        HTML);
+    });
+
+    $response = $this->get('/custom-size?ogimage');
+
+    $content = $response->getContent();
+
+    expect($content)
+        ->toContain('width: 800px')
+        ->toContain('height: 400px')
+        ->toContain('<div>Custom</div>');
+});

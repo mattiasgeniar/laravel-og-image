@@ -107,3 +107,44 @@ it('stores the resolved url in cache when using custom resolver', function () {
 
     expect(Cache::get("og-image:{$hash}"))->toBe('http://localhost/some-page?category=php');
 });
+
+it('produces a different hash when dimensions are provided', function () {
+    $hashDefault = $this->ogImage->hash('<div>Hello</div>');
+    $hashWithDimensions = $this->ogImage->hash('<div>Hello</div>', 800, 400);
+
+    expect($hashDefault)->not->toBe($hashWithDimensions);
+    expect($hashWithDimensions)->toBe(md5('<div>Hello</div>-800x400'));
+});
+
+it('produces the same hash without dimensions as before', function () {
+    $hash = $this->ogImage->hash('<div>Hello</div>');
+
+    expect($hash)->toBe(md5('<div>Hello</div>'));
+});
+
+it('can store and retrieve dimensions from cache', function () {
+    $this->ogImage->storeDimensionsInCache('test-hash', 800, 400);
+
+    expect($this->ogImage->getDimensionsFromCache('test-hash'))
+        ->toBe(['width' => 800, 'height' => 400]);
+});
+
+it('returns null when dimensions are not in cache', function () {
+    expect($this->ogImage->getDimensionsFromCache('nonexistent'))->toBeNull();
+});
+
+it('includes data attributes when dimensions are provided', function () {
+    $result = $this->ogImage->html('<div>Hello</div>', width: 800, height: 400);
+
+    expect($result->toHtml())
+        ->toContain('data-og-width="800"')
+        ->toContain('data-og-height="400"');
+});
+
+it('does not include data attributes without dimensions', function () {
+    $result = $this->ogImage->html('<div>Hello</div>');
+
+    expect($result->toHtml())
+        ->not->toContain('data-og-width')
+        ->not->toContain('data-og-height');
+});

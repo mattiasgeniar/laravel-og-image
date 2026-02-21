@@ -17,14 +17,13 @@ class InjectOgImageFallbackAction
             return null;
         }
 
-        $hash = $this->hashContent($fallbackHtml);
+        $hash = app(OgImage::class)->hash($fallbackHtml);
 
-        $this->cachePageUrl($hash, $this->resolveScreenshotUrl());
+        app(OgImage::class)->storeUrlInCache($hash, app(OgImageGenerator::class)->resolveScreenshotUrl());
 
-        $content = $this->injectMetaTags($content, $hash);
-        $content = $this->injectTemplate($content, $fallbackHtml);
+        $content = $this->injectBeforeClosingTag($content, 'head', app(OgImage::class)->metaTags($hash, config('og-image.format', 'jpeg'))->toHtml());
 
-        return $content;
+        return $this->injectBeforeClosingTag($content, 'body', "<template data-og-image>{$fallbackHtml}</template>");
     }
 
     protected function renderFallback(Request $request): ?string
@@ -44,51 +43,12 @@ class InjectOgImageFallbackAction
         return $view instanceof View ? $view->render() : (string) $view;
     }
 
-    protected function hashContent(string $html): string
+    protected function injectBeforeClosingTag(string $html, string $tag, string $inject): string
     {
-        return app(OgImage::class)->hash($html);
-    }
-
-    protected function resolveScreenshotUrl(): string
-    {
-        return app(OgImageGenerator::class)->resolveScreenshotUrl();
-    }
-
-    protected function cachePageUrl(string $hash, string $url): void
-    {
-        app(OgImage::class)->storeUrlInCache($hash, $url);
-    }
-
-    protected function injectMetaTags(string $content, string $hash): string
-    {
-        $format = config('og-image.format', 'jpeg');
-        $metaTags = app(OgImage::class)->metaTags($hash, $format)->toHtml();
-
-        return $this->injectBeforeClosingHead($content, $metaTags);
-    }
-
-    protected function injectTemplate(string $content, string $html): string
-    {
-        $template = '<template data-og-image>'.$html.'</template>';
-
-        return $this->injectBeforeClosingBody($content, $template);
-    }
-
-    protected function injectBeforeClosingHead(string $html, string $inject): string
-    {
-        if (stripos($html, '</head>') !== false) {
-            return str_ireplace('</head>', $inject.PHP_EOL.'</head>', $html);
+        if (stripos($html, "</{$tag}>") === false) {
+            return $html;
         }
 
-        return $html;
-    }
-
-    protected function injectBeforeClosingBody(string $html, string $inject): string
-    {
-        if (stripos($html, '</body>') !== false) {
-            return str_ireplace('</body>', $inject.PHP_EOL.'</body>', $html);
-        }
-
-        return $html;
+        return str_ireplace("</{$tag}>", "{$inject}".PHP_EOL."</{$tag}>", $html);
     }
 }

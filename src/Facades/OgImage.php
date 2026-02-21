@@ -16,6 +16,7 @@ use Spatie\OgImage\OgImageGenerator;
  * @method static OgImageGenerator size(int $width, int $height)
  * @method static OgImageGenerator format(string $format)
  * @method static OgImageGenerator disk(string $disk, string $path = 'og-images')
+ * @method static string generateForUrl(string $pageUrl, ?string $format = null)
  * @method static object getActionClass(string $actionName, string $actionClass)
  *
  * @see \Spatie\OgImage\OgImageGenerator

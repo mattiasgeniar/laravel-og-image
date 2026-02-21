@@ -56,3 +56,39 @@ it('accepts a format attribute with a view', function () {
 
     $view->assertSee('.webp', false);
 });
+
+it('accepts width and height attributes', function () {
+    $view = $this->blade('<x-og-image :width="800" :height="400"><div>Custom Size</div></x-og-image>');
+
+    $view->assertSee('data-og-width="800"', false);
+    $view->assertSee('data-og-height="400"', false);
+});
+
+it('uses a different hash when width and height are provided', function () {
+    $slotHtml = '<div>Hello World</div>';
+
+    $this->blade('<x-og-image :width="800" :height="400">'.$slotHtml.'</x-og-image>');
+
+    $hashWithDimensions = md5($slotHtml.'-800x400');
+    $hashWithout = md5($slotHtml);
+
+    expect(Cache::get("og-image:{$hashWithDimensions}"))->toBe('http://localhost');
+    expect(Cache::get("og-image:{$hashWithout}"))->toBeNull();
+});
+
+it('stores dimensions in cache when provided', function () {
+    $slotHtml = '<div>Hello World</div>';
+
+    $this->blade('<x-og-image :width="800" :height="400">'.$slotHtml.'</x-og-image>');
+
+    $hash = md5($slotHtml.'-800x400');
+
+    expect(Cache::get("og-image-dimensions:{$hash}"))->toBe(['width' => 800, 'height' => 400]);
+});
+
+it('does not include dimension attributes without width and height', function () {
+    $view = $this->blade('<x-og-image><div>No Size</div></x-og-image>');
+
+    $view->assertDontSee('data-og-width', false);
+    $view->assertDontSee('data-og-height', false);
+});
