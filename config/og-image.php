@@ -41,6 +41,14 @@ return [
     'preview_parameter' => 'ogimage',
 
     /*
+     * The number of seconds that CDNs and browsers may cache the redirect
+     * from /og-image/{hash}.jpeg to the static file on disk.
+     * Since image URLs are content-hashed, this is safe to cache aggressively.
+     * Set to 0 to disable caching of the redirect.
+     */
+    'redirect_cache_max_age' => 60 * 60 * 24,
+
+    /*
      * The maximum number of seconds to wait for a lock when generating
      * an OG image. This prevents concurrent requests from generating
      * the same image simultaneously.

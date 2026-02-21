@@ -23,7 +23,7 @@ class GenerateOgImageAction
         }
 
         if ($cachedImageUrl = $this->getCachedImageUrl($hash, $format)) {
-            return redirect($cachedImageUrl);
+            return $this->redirectWithCacheHeaders($cachedImageUrl);
         }
 
         $pageUrl = app(OgImage::class)->getUrlFromCache($hash);
@@ -34,7 +34,20 @@ class GenerateOgImageAction
 
         $this->generateImage($hash, $format, $pageUrl);
 
-        return redirect($this->getCachedImageUrl($hash, $format));
+        return $this->redirectWithCacheHeaders($this->getCachedImageUrl($hash, $format));
+    }
+
+    protected function redirectWithCacheHeaders(string $url): Response
+    {
+        $maxAge = config('og-image.redirect_cache_max_age', 60 * 60 * 24);
+
+        $redirect = redirect($url);
+
+        if ($maxAge > 0) {
+            $redirect->header('Cache-Control', "public, max-age={$maxAge}");
+        }
+
+        return $redirect;
     }
 
     protected function getCachedImageUrl(string $hash, string $format): ?string

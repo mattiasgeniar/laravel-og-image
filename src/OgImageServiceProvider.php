@@ -36,7 +36,7 @@ class OgImageServiceProvider extends PackageServiceProvider
     {
         Blade::component('og-image', OgImageComponent::class);
 
-        Route::prefix('og-image')->group(fn () => Route::get('{filename}', OgImageController::class)
+        Route::middleware([])->prefix('og-image')->group(fn () => Route::get('{filename}', OgImageController::class)
             ->where('filename', '[a-f0-9]+\.(png|jpeg|jpg|webp)')
             ->name('og-image.serve'));
 

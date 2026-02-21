@@ -1,20 +1,7 @@
 ---
 title: Getting started
-weight: 1
+weight: 2
 ---
-
-When you share a link on social media, platforms like Twitter, Facebook, and LinkedIn display a preview image. These are called Open Graph (OG) images. This package lets you define that image as HTML in your Blade views, and automatically screenshots it to generate the actual image file.
-
-## How it works
-
-1. You wrap your OG image HTML in the `<x-og-image>` Blade component
-2. The package renders it inside a hidden `<template>` tag on your page and outputs `og:image` meta tags pointing to `/og-image/{hash}.jpeg`
-3. When a social platform (or any crawler) requests that image URL, the package looks up which page the image belongs to
-4. It visits that page with `?ogimage` appended, which triggers a middleware that strips everything except the `<head>` and your template content, displayed at 1200×630 pixels
-5. A screenshot is taken and saved to disk
-6. Future requests for the same image are served directly from disk
-
-Because the screenshot uses your actual page's `<head>`, your OG image inherits all of your CSS, fonts, and Vite assets. No separate stylesheet configuration needed.
 
 ## The Blade component
 
@@ -42,6 +29,8 @@ This outputs a hidden `<template>` tag (natively invisible in browsers) and the 
 ```
 
 The image URL contains a hash of your HTML content. When the content changes, the hash changes, so crawlers pick up the new image automatically.
+
+On first render, the meta tags point to `/og-image/{hash}.jpeg`, which triggers image generation. Once the image has been generated, subsequent renders output the direct storage URL (e.g. `https://yourapp.com/storage/og-images/a1b2c3d4e5f6.jpeg`), so crawlers can fetch the image without hitting Laravel.
 
 ## Using a Blade view
 

@@ -156,3 +156,24 @@ it('does not include data attributes without dimensions', function () {
         ->not->toContain('data-og-width')
         ->not->toContain('data-og-height');
 });
+
+it('uses the route url in meta tags when image is not yet cached', function () {
+    $hash = md5('<div>Hello</div>');
+
+    $metaTags = $this->ogImage->metaTags($hash, 'jpeg');
+
+    expect($metaTags->toHtml())
+        ->toContain("og-image/{$hash}.jpeg");
+});
+
+it('uses the direct storage url in meta tags when image is cached', function () {
+    $hash = md5('<div>Hello</div>');
+
+    $this->ogImage->storeImageUrlInCache($hash, 'jpeg', 'https://cdn.example.com/og-images/abc123.jpeg');
+
+    $metaTags = $this->ogImage->metaTags($hash, 'jpeg');
+
+    expect($metaTags->toHtml())
+        ->toContain('https://cdn.example.com/og-images/abc123.jpeg')
+        ->not->toContain("og-image/{$hash}.jpeg");
+});

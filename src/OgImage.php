@@ -90,7 +90,7 @@ class OgImage
 
     public function metaTags(string $hash, string $format): HtmlString
     {
-        $url = e($this->url($hash, $format));
+        $url = e($this->getImageUrlFromCache($hash, $format) ?? $this->url($hash, $format));
 
         $tags = implode(PHP_EOL, [
             "<meta property=\"og:image\" content=\"{$url}\">",
