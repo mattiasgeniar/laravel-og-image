@@ -140,8 +140,8 @@ class OgImageGenerator
 
     public function generateForUrl(string $pageUrl, ?string $format = null): string
     {
-        $format ??= config('og-image.format', 'jpeg');
         $ogImage = app(OgImage::class);
+        $format ??= $ogImage->defaultFormat();
 
         $html = Http::get($pageUrl)->body();
         $extracted = TemplateExtractor::extract($html);
@@ -160,13 +160,7 @@ class OgImageGenerator
             return $disk->url($imagePath);
         }
 
-        $ogImage->storeUrlInCache($hash, $pageUrl);
-
-        if ($width !== null) {
-            if ($height !== null) {
-                $ogImage->storeDimensionsInCache($hash, $width, $height);
-            }
-        }
+        $ogImage->storeInCache($hash, $pageUrl, $width, $height);
 
         $previewParameter = config('og-image.preview_parameter', 'ogimage');
 

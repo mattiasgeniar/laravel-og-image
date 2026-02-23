@@ -84,7 +84,7 @@ class RenderOgImageMiddleware
         $hash = $hashMatch[1];
 
         preg_match('/data-og-format="(\w+)"/', $content, $formatMatch);
-        $format = $formatMatch[1] ?? config('og-image.format', 'jpeg');
+        $format = $formatMatch[1] ?? app(OgImage::class)->defaultFormat();
 
         $metaTags = app(OgImage::class)->metaTags($hash, $format)->toHtml();
 

@@ -36,7 +36,7 @@ it('creates an og image when visiting the og image url', function () {
     preg_match('/og-image\/([a-f0-9]+)\.jpeg/', $content, $matches);
     $hash = $matches[1];
 
-    expect(Cache::get("og-image:{$hash}"))->toBe('http://localhost/test-page');
+    expect(Cache::get("og-image:{$hash}")['url'])->toBe('http://localhost/test-page');
 
     $mockGenerator = Mockery::mock(OgImageGenerator::class);
     $mockGenerator->shouldReceive('generate')

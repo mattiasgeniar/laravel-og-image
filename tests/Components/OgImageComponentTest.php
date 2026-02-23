@@ -34,7 +34,7 @@ it('stores the page url in cache', function () {
 
     $hash = md5($slotHtml);
 
-    expect(Cache::get("og-image:{$hash}"))->toBe('http://localhost');
+    expect(Cache::get("og-image:{$hash}"))->toBe(['url' => 'http://localhost']);
 });
 
 it('accepts a format attribute', function () {
@@ -81,18 +81,8 @@ it('uses a different hash when width and height are provided', function () {
     $hashWithDimensions = md5($slotHtml.'-800x400');
     $hashWithout = md5($slotHtml);
 
-    expect(Cache::get("og-image:{$hashWithDimensions}"))->toBe('http://localhost');
+    expect(Cache::get("og-image:{$hashWithDimensions}"))->toBe(['url' => 'http://localhost', 'width' => 800, 'height' => 400]);
     expect(Cache::get("og-image:{$hashWithout}"))->toBeNull();
-});
-
-it('stores dimensions in cache when provided', function () {
-    $slotHtml = '<div>Hello World</div>';
-
-    $this->blade('<x-og-image :width="800" :height="400">'.$slotHtml.'</x-og-image>');
-
-    $hash = md5($slotHtml.'-800x400');
-
-    expect(Cache::get("og-image-dimensions:{$hash}"))->toBe(['width' => 800, 'height' => 400]);
 });
 
 it('does not include dimension attributes without width and height', function () {

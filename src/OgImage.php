@@ -9,16 +9,10 @@ class OgImage
 {
     public function html(string $html, ?string $format = null, ?int $width = null, ?int $height = null): HtmlString
     {
-        $format ??= config('og-image.format', 'jpeg');
+        $format ??= $this->defaultFormat();
         $hash = $this->hash($html, $width, $height);
 
-        $this->storeUrlInCache($hash, app(OgImageGenerator::class)->resolveScreenshotUrl());
-
-        if ($width !== null) {
-            if ($height !== null) {
-                $this->storeDimensionsInCache($hash, $width, $height);
-            }
-        }
+        $this->storeInCache($hash, app(OgImageGenerator::class)->resolveScreenshotUrl(), $width, $height);
 
         $attributes = collect([
             'data-og-image' => true,
@@ -36,10 +30,15 @@ class OgImage
 
     public function url(string $hash, ?string $format = null): string
     {
-        $format ??= config('og-image.format', 'jpeg');
+        $format ??= $this->defaultFormat();
         $baseUrl = rtrim(config('app.url'), '/');
 
         return "{$baseUrl}/og-image/{$hash}.{$format}";
+    }
+
+    public function defaultFormat(): string
+    {
+        return config('og-image.format', 'jpeg');
     }
 
     public function hash(string $html, ?int $width = null, ?int $height = null): string
@@ -51,32 +50,25 @@ class OgImage
         return md5($subject);
     }
 
-    public function storeUrlInCache(string $hash, string $url): void
+    public function storeInCache(string $hash, string $url, ?int $width = null, ?int $height = null): void
     {
         if (Cache::has("og-image:{$hash}")) {
             return;
         }
 
-        Cache::forever("og-image:{$hash}", $url);
-    }
+        $data = ['url' => $url];
 
-    public function getUrlFromCache(string $hash): ?string
-    {
-        return Cache::get("og-image:{$hash}");
-    }
-
-    public function storeDimensionsInCache(string $hash, int $width, int $height): void
-    {
-        if (Cache::has("og-image-dimensions:{$hash}")) {
-            return;
+        if ($width !== null && $height !== null) {
+            $data['width'] = $width;
+            $data['height'] = $height;
         }
 
-        Cache::forever("og-image-dimensions:{$hash}", compact('width', 'height'));
+        Cache::forever("og-image:{$hash}", $data);
     }
 
-    public function getDimensionsFromCache(string $hash): ?array
+    public function getFromCache(string $hash): ?array
     {
-        return Cache::get("og-image-dimensions:{$hash}");
+        return Cache::get("og-image:{$hash}");
     }
 
     public function imagePath(string $hash, string $format): string

@@ -41,31 +41,24 @@ it('stores the current url in cache', function () {
 
     $hash = md5('<div>Hello</div>');
 
-    expect(Cache::get("og-image:{$hash}"))->toBe('http://localhost');
+    expect(Cache::get("og-image:{$hash}"))->toBe(['url' => 'http://localhost']);
 });
 
-it('can store and retrieve a url from cache', function () {
-    $this->ogImage->storeUrlInCache('test-hash', 'https://example.com/my-page');
+it('can store and retrieve from cache', function () {
+    $this->ogImage->storeInCache('test-hash', 'https://example.com/my-page');
 
-    expect($this->ogImage->getUrlFromCache('test-hash'))->toBe('https://example.com/my-page');
+    expect($this->ogImage->getFromCache('test-hash'))->toBe(['url' => 'https://example.com/my-page']);
 });
 
-it('skips writing to cache when url is already cached', function () {
+it('skips writing to cache when already cached', function () {
     Cache::shouldReceive('has')->with('og-image:test-hash')->once()->andReturn(true);
     Cache::shouldReceive('forever')->never();
 
-    $this->ogImage->storeUrlInCache('test-hash', 'https://example.com/my-page');
+    $this->ogImage->storeInCache('test-hash', 'https://example.com/my-page');
 });
 
-it('skips writing dimensions to cache when already cached', function () {
-    Cache::shouldReceive('has')->with('og-image-dimensions:test-hash')->once()->andReturn(true);
-    Cache::shouldReceive('forever')->never();
-
-    $this->ogImage->storeDimensionsInCache('test-hash', 800, 400);
-});
-
-it('returns null when url is not in cache', function () {
-    expect($this->ogImage->getUrlFromCache('nonexistent'))->toBeNull();
+it('returns null when not in cache', function () {
+    expect($this->ogImage->getFromCache('nonexistent'))->toBeNull();
 });
 
 it('can generate a url for a hash', function () {
@@ -126,7 +119,7 @@ it('stores the resolved url in cache when using custom resolver', function () {
 
     $hash = md5('<div>Hello</div>');
 
-    expect(Cache::get("og-image:{$hash}"))->toBe('http://localhost/some-page?category=php');
+    expect(Cache::get("og-image:{$hash}")['url'])->toBe('http://localhost/some-page?category=php');
 });
 
 it('produces a different hash when dimensions are provided', function () {
@@ -144,14 +137,10 @@ it('produces the same hash without dimensions as before', function () {
 });
 
 it('can store and retrieve dimensions from cache', function () {
-    $this->ogImage->storeDimensionsInCache('test-hash', 800, 400);
+    $this->ogImage->storeInCache('test-hash', 'https://example.com/page', 800, 400);
 
-    expect($this->ogImage->getDimensionsFromCache('test-hash'))
-        ->toBe(['width' => 800, 'height' => 400]);
-});
-
-it('returns null when dimensions are not in cache', function () {
-    expect($this->ogImage->getDimensionsFromCache('nonexistent'))->toBeNull();
+    expect($this->ogImage->getFromCache('test-hash'))
+        ->toBe(['url' => 'https://example.com/page', 'width' => 800, 'height' => 400]);
 });
 
 it('includes data attributes when dimensions are provided', function () {

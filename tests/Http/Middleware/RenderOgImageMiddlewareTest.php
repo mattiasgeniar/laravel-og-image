@@ -164,7 +164,7 @@ it('caches the fallback url', function () {
     $html = view('test-fallback', ['title' => 'Fallback Title'])->render();
     $hash = md5($html);
 
-    expect(Cache::get("og-image:{$hash}"))->toBe('http://localhost/no-template');
+    expect(Cache::get("og-image:{$hash}"))->toBe(['url' => 'http://localhost/no-template']);
 });
 
 it('does not inject fallback when page has a template', function () {

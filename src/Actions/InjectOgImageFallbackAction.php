@@ -19,9 +19,9 @@ class InjectOgImageFallbackAction
 
         $ogImage = app(OgImage::class);
         $hash = $ogImage->hash($fallbackHtml);
-        $format = config('og-image.format', 'jpeg');
+        $format = $ogImage->defaultFormat();
 
-        $ogImage->storeUrlInCache($hash, app(OgImageGenerator::class)->resolveScreenshotUrl());
+        $ogImage->storeInCache($hash, app(OgImageGenerator::class)->resolveScreenshotUrl());
 
         $template = "<template data-og-image data-og-hash=\"{$hash}\" data-og-format=\"{$format}\">{$fallbackHtml}</template>";
 

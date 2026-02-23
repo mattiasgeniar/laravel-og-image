@@ -26,13 +26,13 @@ class GenerateOgImageAction
         $disk = Storage::disk(config('og-image.disk', 'public'));
 
         if (! $disk->exists($path)) {
-            $pageUrl = app(OgImage::class)->getUrlFromCache($hash);
+            $cached = app(OgImage::class)->getFromCache($hash);
 
-            if (! $pageUrl) {
+            if (! $cached) {
                 abort(404);
             }
 
-            $this->generateImage($hash, $pageUrl, $path, $disk);
+            $this->generateImage($cached, $path, $disk);
         }
 
         return $this->serveImage($disk, $path, $format);
@@ -82,12 +82,12 @@ class GenerateOgImageAction
         return $redirect;
     }
 
-    protected function generateImage(string $hash, string $pageUrl, string $path, $disk): void
+    protected function generateImage(array $cached, string $path, $disk): void
     {
         $lockTimeout = config('og-image.lock_timeout', 60);
-        $dimensions = app(OgImage::class)->getDimensionsFromCache($hash);
+        $pageUrl = $cached['url'];
 
-        Cache::lock("og-image-generate:{$hash}", $lockTimeout)->block($lockTimeout, function () use ($pageUrl, $path, $disk, $dimensions) {
+        Cache::lock("og-image-generate:".md5($pageUrl), $lockTimeout)->block($lockTimeout, function () use ($cached, $pageUrl, $path, $disk) {
             if ($disk->exists($path)) {
                 return;
             }
@@ -96,8 +96,8 @@ class GenerateOgImageAction
                 app(OgImageGenerator::class)->generate(
                     $pageUrl.'?'.config('og-image.preview_parameter', 'ogimage'),
                     $path,
-                    $dimensions['width'] ?? null,
-                    $dimensions['height'] ?? null,
+                    $cached['width'] ?? null,
+                    $cached['height'] ?? null,
                 );
             } catch (Throwable $exception) {
                 Log::error("OG image generation failed for {$pageUrl}: {$exception->getMessage()}");

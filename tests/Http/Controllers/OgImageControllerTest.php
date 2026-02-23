@@ -13,7 +13,7 @@ it('returns 404 when image does not exist and url is not in cache', function () 
 
 it('serves the image directly for png', function () {
     $ogImage = app(OgImage::class);
-    $ogImage->storeUrlInCache('abc123', 'https://example.com/page');
+    $ogImage->storeInCache('abc123', 'https://example.com/page');
 
     Storage::disk('public')->put('og-images/abc123.png', 'fake-png-content');
 

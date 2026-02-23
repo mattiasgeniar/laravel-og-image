@@ -14,7 +14,7 @@ it('uses the configured lock timeout', function () {
     config()->set('og-image.lock_timeout', 30);
 
     $ogImage = app(OgImage::class);
-    $ogImage->storeUrlInCache('abc123', 'https://example.com/page');
+    $ogImage->storeInCache('abc123', 'https://example.com/page');
 
     $mockGenerator = Mockery::mock(OgImageGenerator::class);
     $mockGenerator->shouldReceive('generate')
@@ -36,7 +36,7 @@ it('uses the configured lock timeout', function () {
 
 it('throws CouldNotGenerateOgImage when screenshot fails', function () {
     $ogImage = app(OgImage::class);
-    $ogImage->storeUrlInCache('abc123', 'https://example.com/page');
+    $ogImage->storeInCache('abc123', 'https://example.com/page');
 
     $mockGenerator = Mockery::mock(OgImageGenerator::class);
     $mockGenerator->shouldReceive('generate')
@@ -51,8 +51,7 @@ it('throws CouldNotGenerateOgImage when screenshot fails', function () {
 
 it('passes cached dimensions to the generator', function () {
     $ogImage = app(OgImage::class);
-    $ogImage->storeUrlInCache('abc123', 'https://example.com/page');
-    $ogImage->storeDimensionsInCache('abc123', 800, 400);
+    $ogImage->storeInCache('abc123', 'https://example.com/page', 800, 400);
 
     $mockGenerator = Mockery::mock(OgImageGenerator::class);
     $mockGenerator->shouldReceive('generate')
@@ -72,7 +71,7 @@ it('passes cached dimensions to the generator', function () {
 
 it('passes null dimensions when none are cached', function () {
     $ogImage = app(OgImage::class);
-    $ogImage->storeUrlInCache('abc123', 'https://example.com/page');
+    $ogImage->storeInCache('abc123', 'https://example.com/page');
 
     $mockGenerator = Mockery::mock(OgImageGenerator::class);
     $mockGenerator->shouldReceive('generate')
@@ -103,7 +102,7 @@ it('serves the image directly when it already exists on disk', function () {
 
 it('does not regenerate when image already exists on disk', function () {
     $ogImage = app(OgImage::class);
-    $ogImage->storeUrlInCache('abc123', 'https://example.com/page');
+    $ogImage->storeInCache('abc123', 'https://example.com/page');
 
     Storage::disk('public')->put('og-images/abc123.jpeg', 'existing-content');
 
