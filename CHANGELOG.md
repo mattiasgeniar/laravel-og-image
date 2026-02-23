@@ -2,6 +2,10 @@
 
 All notable changes to `laravel-og-image` will be documented in this file.
 
+## 0.0.3 - 2026-02-23
+
+**Full Changelog**: https://github.com/spatie/laravel-og-image/compare/0.0.2...0.0.3
+
 ## 0.0.2 - 2026-02-22
 
 **Full Changelog**: https://github.com/spatie/laravel-og-image/compare/0.0.1...0.0.2
