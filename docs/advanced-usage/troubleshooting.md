@@ -40,8 +40,10 @@ Common fixes:
 - Add a delay before the screenshot is taken:
 
 ```php
+use Spatie\LaravelScreenshot\Enums\WaitUntil;
+
 OgImage::configureScreenshot(function ($screenshot) {
-    $screenshot->waitUntilNetworkIdle();
+    $screenshot->waitUntil(WaitUntil::NetworkIdle0);
 });
 ```
 

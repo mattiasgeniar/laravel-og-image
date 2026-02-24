@@ -21,19 +21,19 @@ The following actions are registered in the `og-image` config file:
 
 Handles the full flow when a social platform requests an OG image URL (`/og-image/{hash}.jpeg`): checking if the image exists on disk, looking up the page URL, taking a screenshot with locking, and serving the image directly.
 
-Overridable methods: `serveImage`, `generateImage`.
+Overridable methods: `serveImage`, `generateImage`, `respondWithImage`, `redirectToImage`.
 
 ### InjectOgImageFallbackAction
 
 Handles injecting fallback OG image meta tags and template content into pages that don't have an `<x-og-image>` component.
 
-Overridable methods: `renderFallback`, `hashContent`, `resolveScreenshotUrl`, `cachePageUrl`, `injectMetaTags`, `injectTemplate`, `injectBeforeClosingHead`, `injectBeforeClosingBody`.
+Overridable methods: `renderFallback`, `injectBeforeClosingTag`.
 
 ### RenderOgImageScreenshotAction
 
 Handles rendering the screenshot page when `?ogimage` is appended to a URL. Extracts the template content and head from the page, and renders the screenshot view.
 
-Overridable methods: `extractTemplateContent`, `extractHead`, `renderScreenshot`.
+Overridable methods: `extractHead`.
 
 ## Overriding an action
 
@@ -46,9 +46,9 @@ use Spatie\OgImage\Actions\GenerateOgImageAction;
 
 class CustomGenerateOgImageAction extends GenerateOgImageAction
 {
-    protected function takeScreenshot(string $pageUrl, string $path, string $format): void
+    protected function generateImage(array $cached, string $path, $disk): void
     {
-        // Custom screenshot logic...
+        // Custom generation logic...
     }
 }
 ```

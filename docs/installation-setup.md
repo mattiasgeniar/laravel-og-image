@@ -9,6 +9,8 @@ You can install the package via composer:
 composer require spatie/laravel-og-image
 ```
 
+The package automatically registers a middleware in the `web` middleware group that handles OG image processing (injecting meta tags, fallback images, and preview rendering). No manual middleware configuration is needed.
+
 ## Configuring the screenshot driver
 
 This package uses [spatie/laravel-screenshot](https://github.com/spatie/laravel-screenshot) to take screenshots of your OG image HTML. You can use either Browsershot or Cloudflare to take these screenshots.
